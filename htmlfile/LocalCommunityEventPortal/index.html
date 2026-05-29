@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Community Event Portal</title>
+    
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #bec0c1; transition: background 0.3s, color 0.3s; }
+        body.dark-mode { background-color: #222222; color: #ffffff; }
+        
+        header { background-color: #333; color: white; padding: 15px 20px; }
+        header nav a { color: white; margin-right: 15px; text-decoration: none; }
+        
+        #welcomeBanner { background-color: lightblue; padding: 20px; text-align: center; color: #333; }
+        .highlight { color: #4b0e7d; font-weight: bolder; background-color: yellow; padding: 2px 5px; }
+        
+        .gallery-table { border-collapse: collapse; width: 100%; margin-top: 20px; background-color: white; color: #333; }
+        .gallery-table td { padding: 15px; text-align: center; border: 1px solid #999; }
+        .gallery-table img { border: 2px solid #333; transition: transform 0.2s; cursor: pointer; }
+        
+        .panel-section { padding: 20px; background-color: #e2e4e6; margin: 20px; border-radius: 5px; color: #333; }
+        body.dark-mode .panel-section { background-color: #333333; color: #ffffff; border: 1px solid #444; }
+        
+        form { max-width: 500px; margin: 0 auto; }
+        form input, form select, form textarea { width: 100%; padding: 8px; margin-bottom: 15px; box-sizing: border-box; }
+        form button, .action-btn { padding: 10px 20px; background-color: #333; color: white; border: none; cursor: pointer; width: 100%; font-size: 16px; margin-top: 5px; }
+        body.dark-mode form button, body.dark-mode .action-btn { background-color: #555; }
+        
+        footer { background-color: lightgray; padding: 15px; text-align: center; margin-top: 20px; color: #333; }
+        .media-section { text-align: center; margin: 20px; padding: 20px; background: white; color: #333; }
+    </style>
+    
+    <script>
+        //  DEVTOOLS DEBUGGING LOGS
+        console.log("Portal initialization: DOM script loading verified.");
+
+        // EVENT PROCESSING & CONSOLE LOGGING
+        function validatePhone(input) {
+            if(input.value.length < 10) {
+                console.warn("DevTools Warning: Invalid entry layout validation triggered on phone input.");
+                alert("Please enter a valid 10-digit phone number.");
+            }
+        }
+        function updateFee(selectElement) {
+            var fees = { "cultural": "$15.00", "social": "Free", "volunteer": "Free" };
+            document.getElementById("feeDisplay").innerText = "Event Fee: " + (fees[selectElement.value] || "Free");
+        }
+        function countChars(textarea) {
+            var count = textarea.value.length;
+            document.getElementById("charCount").innerText = count + " characters entered";
+        }
+        function zoomImage(img) {
+            img.style.transform = (img.style.transform === "scale(1.5)") ? "scale(1)" : "scale(1.5)";
+        }
+
+        //  WEB STORAGE API (PREFERENCES)
+        function applySavedPreferences() {
+            var savedTheme = localStorage.getItem("portalTheme");
+            var savedCategory = localStorage.getItem("preferredCategory");
+            
+            if (savedTheme === "dark") {
+                document.body.classList.add("dark-mode");
+                document.getElementById("themeSelector").value = "dark";
+            }
+            if (savedCategory) {
+                document.getElementById("prefCategorySelector").value = savedCategory;
+            }
+            console.log("Task 8: Retrieved and applied local web storage choices.");
+        }
+
+        function savePreferences() {
+            var selectedTheme = document.getElementById("themeSelector").value;
+            var selectedCategory = document.getElementById("prefCategorySelector").value;
+            
+            localStorage.setItem("portalTheme", selectedTheme);
+            localStorage.setItem("preferredCategory", selectedCategory);
+            
+            if (selectedTheme === "dark") {
+                document.body.classList.add("dark-mode");
+            } else {
+                document.body.classList.remove("dark-mode");
+            }
+            alert("Preferences Saved Successfully!");
+        }
+
+        function clearPreferences() {
+            localStorage.removeItem("portalTheme");
+            localStorage.removeItem("preferredCategory");
+            document.body.classList.remove("dark-mode");
+            document.getElementById("themeSelector").value = "light";
+            document.getElementById("prefCategorySelector").value = "";
+            alert("Web storage cleared successfully!");
+            console.log("Task 8 Log: Storage preferences purged.");
+        }
+
+        // ========================================================
+        //  GEOLOCATION FOR MAPPING
+        // ========================================================
+        function findNearbyEvents() {
+            console.log("Task 9 Log: Initiating Geolocation coordinates discovery lookup.");
+            var geoDisplay = document.getElementById("locationDisplay");
+            
+            if (!navigator.geolocation) {
+                geoDisplay.innerText = "Geolocation is not supported by your browser.";
+                return;
+            }
+            
+            var options = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 };
+            
+            geoDisplay.innerText = "Locating coordinates... Please allow permission check.";
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    var lat = position.coords.latitude;
+                    var lon = position.coords.longitude;
+                    geoDisplay.innerHTML = "<strong>Success! Your Coordinates:</strong><br>Latitude: " + lat + " | Longitude: " + lon + "<br><span style='color:green;'>Found 3 nearby events matching your area.</span>";
+                    console.log("DevTools Diagnostics - Coordinates Discovered: " + lat + ", " + lon);
+                }, 
+                function(error) {
+                    console.error("Task 9 DevTools Error: Tracking execution failed.", error);
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            geoDisplay.innerText = "Permission denied. Please allow access to view events map.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            geoDisplay.innerText = "Location information is unavailable.";
+                            break;
+                        case error.TIMEOUT:
+                            geoDisplay.innerText = "The request to get user location timed out.";
+                            break;
+                        default:
+                            geoDisplay.innerText = "An unknown error occurred tracking location.";
+                    }
+                }, 
+                options
+            );
+        }
+
+        // Run system validation setup on window load
+        window.onload = applySavedPreferences;
+    </script>
+</head>
+<body>
+
+    <header>
+        <h1>Local Community Event Portal</h1>
+        <nav>
+            <a href="#welcomeBanner">Home</a> 
+            <a href="#events">Events Gallery</a> 
+            <a href="#preferences">Preferences</a>
+            <a href="#geoMapping">Find Local Events</a>
+            <a href="#registration">Register</a> 
+            <a href="help.html" target="_blank">Help</a>
+            <a href="contact.html" target="_blank">Contact</a>
+        </nav>
+    </header>
+
+    <main>
+        <div id="welcomeBanner">
+            <h2>Welcome to the Local Community Event Portal!</h2>
+            <p>Your one-stop destination for all local events and activities.</p> 
+            <span style="font-size: 25px; color: #eb3f3f; font-weight: bold;">Discover and participate in local events and activities.</span>
+            <br><br>
+            <span class="highlight">Join us in building a vibrant community!</span>
+        </div>
+
+        <section id="events" style="padding: 20px;">
+            <h2 style="text-align: center;">Upcoming Community Events</h2>
+            <p style="text-align:center; font-size: 14px;">💡 <em>Double-click an image down inside the gallery table to scale views!</em></p>
+            
+            <table class="gallery-table">
+                <caption>A catalog of our visual past events and highlights</caption>
+                <tr>
+                    <td> 
+                        <img src="https://photorelive.com/blog/photography/img/90/beautifully-decorated-event-venue-creative-details.jpg" alt="Community Event" title="Cultural Festival Venue" width="200" ondblclick="zoomImage(this)">
+                        <p>Discover a wide range of local events, from cultural festivals to community gatherings.</p>
+                    </td>
+                    <td>
+                        <img src="https://tse2.mm.bing.net/th/id/OIP.7Sjik1rd6ahHgKhd84wbcQHaE8?pid=Api&P=0&h=180" alt="Community Event" title="Social Gathering" width="200" height="150" ondblclick="zoomImage(this)">
+                        <p>Find events that match your interests and connect with like-minded individuals.</p>
+                    </td>
+                    <td>
+                        <img src="https://tse4.mm.bing.net/th/id/OIP.7Sjik1rd6ahHgKhd84wbcQHaE8?pid=Api&P=0&h=180" alt="Community Event" title="Volunteer Work" width="200" height="150" ondblclick="zoomImage(this)">
+                        <p>Join us in building a vibrant community! Share your events, and make the most of your area.</p>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <section id="preferences" class="panel-section">
+            <h2 style="text-align: center;">User Dashboard Preferences</h2>
+            <div style="max-width: 500px; margin: 0 auto;">
+                <label for="themeSelector">Choose App Display Theme:</label>
+                <select id="themeSelector">
+                    <option value="light">Light Mode Theme</option>
+                    <option value="dark">Dark Mode Theme</option>
+                </select>
+
+                <label for="prefCategorySelector">Preferred Event Type Track:</label>
+                <select id="prefCategorySelector">
+                    <option value="">-- No Selection Saved --</option>
+                    <option value="cultural">Cultural</option>
+                    <option value="social">Social</option>
+                    <option value="volunteer">Volunteerism</option>
+                </select>
+
+                <button class="action-btn" onclick="savePreferences()">Save Settings</button>
+                <button class="action-btn" style="background-color: #b92c2c;" onclick="clearPreferences()">Clear Saved Storage Preferences</button>
+            </div>
+        </section>
+
+        <section id="geoMapping" class="panel-section" style="text-align: center;">
+            <h2>Event Mapping Integration</h2>
+            <p>Locate the closest active event meetups happening around your vicinity instantly.</p>
+            <button class="action-btn" style="max-width:300px;" onclick="findNearbyEvents()">Find Nearby Events</button>
+            <p id="locationDisplay" style="margin-top: 15px; font-weight: bold; color: #4b0e7d;"></p>
+        </section>
+
+        <section id="registration" class="form-section">
+            <h2 style="text-align: center;">Resident Event Registration</h2>
+            
+            <form oninput="confirmation.value = 'Thank you, ' + username.value + '! Processed registration details configuration.'">
+                
+                <label for="username">Full Name:</label>
+                <input type="text" id="username" name="username" placeholder="Enter full name" autofocus required>
+
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" name="email" placeholder="name@example.com" required>
+
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" placeholder="10-digit mobile number" required onblur="validatePhone(this)">
+
+                <label for="eventdate">Event Date:</label>
+                <input type="date" id="eventdate" name="eventdate" required>
+
+                <label for="eventtype">Select Event Type:</label>
+                <select id="eventtype" name="eventtype" onchange="updateFee(this)">
+                    <option value="cultural">Cultural Festival</option>
+                    <option value="social">Social Gathering</option>
+                    <option value="volunteer">Volunteer Activity</option>
+                </select>
+                <p id="feeDisplay" style="font-weight: bold; color: #333; margin-top: -5px; margin-bottom: 15px;">Event Fee: $15.00</p>
+
+                <label for="message">Special Requests / Feedback:</label>
+                <textarea id="message" name="message" rows="4" placeholder="Any accommodations or feedback?" onkeyup="countChars(this)"></textarea>
+                <p id="charCount" style="font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 15px;">0 characters entered</p>
+
+                <button type="submit" onclick="alert('Submission received! Verifying database payload alignment...');">Submit Registration</button>
+                
+                <br><br>
+                <output name="confirmation" style="font-weight: bold; color: green; display: block; text-align: center;"></output>
+            </form>
+        </section>
+    </main>    
+
+    <footer>
+        <p>&copy; 2026 Local Community Event Portal. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
